@@ -1,0 +1,32 @@
+{
+  "name": "gulp-demo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-polyfill": "^6.26.0",
+    "browser-sync": "^2.26.7",
+    "colors": "^1.4.0",
+    "del": "^5.1.0",
+    "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
+    "gulp-clean-css": "^4.2.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-flatten": "^0.4.0",
+    "gulp-htmlmin": "^5.0.1",
+    "gulp-imagemin": "^6.1.0",
+    "gulp-less": "^4.0.1",
+    "gulp-preprocess": "^3.0.3",
+    "gulp-rename": "^2.0.0",
+    "gulp-uglify": "^3.0.2"
+  },
+  "dependencies": {},
+  "scripts": {
+    "dev": "set NODE_ENV=development&&gulp dev",
+    "build": "set NODE_ENV=production&&gulp build",
+    "test32": "set NODE_ENV=test32&&gulp build"
+  }
+}

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+
+    <title>iScroll demo: probe</title>
+    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="css/iscroll-pro.css">
+</head>
+
+<body>
+    <header>导航栏</header>
+
+    <div id="wrapper">
+        <ul id="scroller">
+            <li>Pretty row 1</li>
+            <li>Pretty row 2</li>
+            <li>Pretty row 3</li>
+            <li>Pretty row 4</li>
+            <li>Pretty row 5</li>
+            <li>Pretty row 6</li>
+            <li>Pretty row 7</li>
+            <li>Pretty row 8</li>
+            <li>Pretty row 9</li>
+            <li>Pretty row 10</li>
+            <li>Pretty row 11</li>
+            <li>Pretty row 12</li>
+            <li>Pretty row 13</li>
+            <li>Pretty row 14</li>
+            <li>Pretty row 15</li>
+            <li>Pretty row 16</li>
+            <li>Pretty row 17</li>
+            <li>Pretty row 18</li>
+            <li>Pretty row 19</li>
+            <li>Pretty row 20</li>
+        </ul>
+    </div>
+
+    <footer></footer>
+
+    <script type="text/javascript" src="lib/iscroll-probe.js"></script>
+    <script type="text/javascript">
+
+        function isPassive() {
+            var supportsPassiveOption = false;
+            try {
+                addEventListener("test", null, Object.defineProperty({}, 'passive', {
+                    get: function () {
+                        supportsPassiveOption = true;
+                    }
+                }));
+            } catch (e) { }
+            return supportsPassiveOption;
+        }
+
+        var myScroll,
+            scroller = document.querySelector("#scroller");
+
+        function _onScroll() {
+            
+        }
+        function _onScrollEnd() {
+            // console.log("%c 滑动结束 已滑动距离距离：", "color:red", this.y, "最大滑动距离：", this.maxScrollY);
+
+        }
+
+        document.addEventListener('touchmove', function (e) { e.preventDefault(); }, isPassive() ? {
+            capture: false,
+            passive: false
+        } : false);
+
+        document.body.onload = function () {
+            myScroll = new IScroll('#wrapper', {
+                // bounce: false,
+                probeType: 3,
+                mouseWheel: true,
+
+                // 如下选项若皆为默认值
+                showRefreshStatus: true, // 是否显示下拉刷新动画
+                refreshAniClass: "loader-01", // 刷新加载时的动画类名
+                showLoadMoreStatus: true, // 是否显示上拉加载更多动画
+                loadMoreAniClass: "loader-02", // 加载更多时的动画类名
+                
+                // loading 时，type：1下拉刷新、2上拉加载更多
+                loadingFn: function (bounce, type) {
+
+                    // 模拟异步数据加载...
+                    setTimeout(function () {
+
+                        // ！！！切记数据加载处理完成后手动调用回滚！！！
+                        bounce();
+
+                    }, 3000);
+                }
+            });
+            myScroll.on('scroll', _onScroll);
+            myScroll.on('scrollEnd', _onScrollEnd);
+        }
+    </script>
+</body>
+
+</html>
