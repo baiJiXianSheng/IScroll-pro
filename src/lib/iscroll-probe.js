@@ -908,11 +908,11 @@ _prototype.height = function () {
                         children[1].css("lineHeight", this.loadMoreDomHeight + "px");
                     }
                     
-                    // children[1].html("");
-                    // children[0].removeClass(self.options.refreshAniClass + " " + self.options.loadMoreAniClass).hide().parentNode.css(obj).hide();
+                    children[1].html("");
+                    children[0].removeClass(self.options.refreshAniClass + " " + self.options.loadMoreAniClass).hide().parentNode.css(obj).hide();
 
-                    // self.scrollTo(x, y, time, self.options.bounceEasing);
-                    // self._waitLoading = false;
+                    self.scrollTo(x, y, time, self.options.bounceEasing);
+                    self._waitLoading = false;
                     
                 }, type); // 1下拉刷新、2上拉加载更多
             }
