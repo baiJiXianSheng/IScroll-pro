@@ -103,11 +103,11 @@ html, body {
             mouseWheel: true,
 
             // 如下选项若不填，皆为默认值
-            showRefreshStatus: true, // 是否显示开启下拉刷新
-            // 使用 iscroll.pro.less 文件中 loader-0* 的类即可修改 loading 动画效果。动画类型效果请参考 https://wow.techbrood.com/fiddle/29490
-            refreshAniClass: "loader-01", // 刷新 loading 时的动画类名
-            showLoadMoreStatus: true, // 是否开启上拉加载更多
-            loadMoreAniClass: "loader-02", // 加载更多 loading 时的动画类名
+            showRefreshStatus: true, // 是否显示开启下拉刷新，默认值: true
+            // 使用 iscroll-pro.less 文件中 loader-0* 的类即可修改 loading 动画效果。动画类型效果请参考 https://wow.techbrood.com/fiddle/29490
+            refreshAniClass: "loader-01", // 刷新 loading 时的动画类名，默认值: "loader-01"
+            showLoadMoreStatus: true, // 是否开启上拉加载更多，默认值: true
+            loadMoreAniClass: "loader-02", // 加载更多 loading 时的动画类名，默认值："loader-02"
             
             // loading 时，type：1下拉刷新、2上拉加载更多
             loadingFn: function (bounce, type) {
@@ -143,4 +143,4 @@ $ yarn build   打包，生成的 dist 目录即为完整文件，可直接部�
 ```
 
 说明：
->当前目录下都为源码，build 之后 `iscroll-pro.js` 和 `iscroll-pro.css` 会变成压缩文件，可用于线上环境
+>当前目录下都为源码，build 之后 dist 目录下 `iscroll-pro.js` 和 `iscroll-pro.css` 会变成压缩文件，可用于线上环境
