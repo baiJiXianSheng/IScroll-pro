@@ -79,8 +79,7 @@ function movefile(startFile, distPosition) {
 function jsMin(containElseJsPath) {
     // 由于 glob 匹配时是按照每个 glob 在数组中的位置依次进行匹配操作的，所以 glob 数组中的取反（negative）glob 必须跟在一个非取反（non-negative）的 glob 后面。第一个 glob 匹配到一组匹配项，然后后面的取反 glob 删除这些匹配项中的一部分。如果取反 glob 只是由普通字符组成的字符串，则执行效率是最高的。
 
-    // exif.js 转译、压缩后无法正常使用
-    gulp.src(containElseJsPath ? "src/**/!(config-define|exif).js" : "src/js/!(config-define|config).js")  
+    gulp.src(containElseJsPath ? ["src/**/*.js", "!src/js/config-define.js"] : "src/js/!(config-define|config).js")  
         .pipe(babel(
             {
                 presets: ['@babel/env']
@@ -92,9 +91,6 @@ function jsMin(containElseJsPath) {
     // .pipe(gulp.src("src/dist/jsmin/*.js"))
     // .pipe(concat("main.min.js")) // 所有js目录下的js编译后的css合并成一个 main.min.js
     // .pipe(gulp.dest("src/dist/jsmin"));
-    
-    // exif 源码移动到 dist/lib/ 下
-    containElseJsPath && movefile("src/lib/exif.js", "src/dist/lib");
 }
 
 // 图片合并压缩+

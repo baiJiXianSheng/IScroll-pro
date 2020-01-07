@@ -406,7 +406,27 @@ _prototype.height = function () {
     
         return me;
     })();
+
+    function isPassive() {
+        var supportsPassiveOption = false;
+        try {
+            addEventListener("test", null, Object.defineProperty({}, 'passive', {
+                get: function () {
+                    supportsPassiveOption = true;
+                }
+            }));
+        } catch (e) { }
+        return supportsPassiveOption;
+    }
+
     function IScroll (el, options) {
+        
+        // PC端模拟滑动
+        document.addEventListener('touchmove', function (e) { e.preventDefault(); }, isPassive() ? {
+            capture: false,
+            passive: false
+        } : false);
+
         this.wrapper = typeof el == 'string' ? document.querySelector(el) : el;
         this.scroller = this.wrapper.children[0];
         this.scrollerStyle = this.scroller.style;		// cache style for better performance
@@ -596,7 +616,7 @@ _prototype.height = function () {
                 }
             }
     
-            if ( !this.enabled || (this.initiated && utils.eventType[e.type] !== this.initiated) ) {
+            if ( !this.enabled || (this.initiated && utils.eventType[e.type] !== this.initiated) || this._waitLoading ) {
                 return;
             }
     
@@ -617,6 +637,7 @@ _prototype.height = function () {
             
             // 手指按住
             this._pointerHold = true;
+            this.holdStartTime = utils.getTime();
 
             this.startTime = utils.getTime();
     
@@ -642,7 +663,7 @@ _prototype.height = function () {
         },
     
         _move: function (e) {
-            if ( !this.enabled || utils.eventType[e.type] !== this.initiated ) {
+            if ( !this.enabled || utils.eventType[e.type] !== this.initiated || this._waitLoading ) { // 此处添加  || this._waitLoading 可在松开手指时限制（无限）拖动距离
                 return;
             }
     
@@ -769,11 +790,15 @@ _prototype.height = function () {
             this.endTime = utils.getTime();
     
             this._pointerHold = false;
+            this.holdStartTime = 0;
 
             // reset if we are outside of the boundaries
             if ( this.resetPosition(this.options.bounceTime) ) {
                 return;
             }
+            this.refreshDom && this.refreshDom.hide();
+            this.loadMoreDom && this.loadMoreDom.hide();
+            this._waitLoading = false;
     
             this.scrollTo(newX, newY);	// ensures that the last position is rounded
     
@@ -872,44 +897,47 @@ _prototype.height = function () {
             }
     
             var self = this;
-            var duration = utils.getTime() - this.startTime;
-            
-            // 滑动太快便超出边界，则直接回弹 duration < 200 || 
-            if ((!this.options.showRefreshStatus && !this.options.showLoadMoreStatus) || !this._waitLoading) {
+            var duration = utils.getTime() - this.startTime,
+                type = self.y > 0 ? 1 : 2,
+                children;
+        
+            if (this.refreshDom && type == 1) {
+                children = this.refreshDom.children;
+            } else if (this.loadMoreDom && type == 2) {
+                children = this.loadMoreDom.children;
+            }
+
+            // 立即回滚
+            if ((!this.options.showRefreshStatus && !this.options.showLoadMoreStatus) || !this._waitLoading) { // duration < 200 || 
+                children && children[1].html("").removeClass("line-height-full").parentNode.hide();
+
                 this.scrollTo(x, y, time, this.options.bounceEasing);
+                this._waitLoading = false;
 
             // 显示加载状态时，等加载更多/刷新回调完成后再手动调用scrollTo回滚
             } else {
-                var type = self.y > 0 ? 1 : 2,
-                    children;
-                
+
+                var obj = {},
+                    html = "",
+                    aniClassName = "";
                 if (type == 1) {
-                    children = this.refreshDom.children;
-                    children[1].html("正在刷新").css("lineHeight", (this.refreshDomHeight / 2 + 2) + "px");
-                    children[0].addClass(this.options.refreshAniClass).show();
+                    html = "正在刷新";
+                    aniClassName = this.options.refreshAniClass;
+                    obj.top = "-" + this.refreshDomHeight + "px";
                 } else if (type == 2) {
-                    children = this.loadMoreDom.children;
-                    children[1].html("正在加载").css("lineHeight", (this.loadMoreDomHeight / 2 + 2) + "px");
-                    children[0].addClass(this.options.loadMoreAniClass).show();
+                    html = "正在加载";
+                    aniClassName = this.options.loadMoreAniClass;
+                    obj.bottom = "-" + this.loadMoreDomHeight + "px";
                 }
+                children[1].html(html).removeClass("line-height-full");
+                children[0].addClass(aniClassName).show();
+
                 this.options.loadingFn(function () {
                     
-                    console.log((self.y > 0 ? "下拉刷新" : "上拉加载更多") + "结束，IScroll 回滚！");
-
-                    var obj = {};
-                    if (type == 1)
-                    {
-                        obj.top = "-" + children[0].parentNode.height();
-                        children[1].css("lineHeight", this.refreshDomHeight + "px");
-                    }
-                    else
-                    {
-                        obj.bottom = "-" + children[0].parentNode.height();
-                        children[1].css("lineHeight", this.loadMoreDomHeight + "px");
-                    }
+                    // console.log((self.y > 0 ? "下拉刷新" : "上拉加载更多") + "结束，IScroll 回滚！");
                     
                     children[1].html("");
-                    children[0].removeClass(self.options.refreshAniClass + " " + self.options.loadMoreAniClass).hide().parentNode.css(obj).hide();
+                    children[0].removeClass(aniClassName).hide().parentNode.css(obj).hide();
 
                     self.scrollTo(x, y, time, self.options.bounceEasing);
                     self._waitLoading = false;
@@ -1003,29 +1031,34 @@ _prototype.height = function () {
                 return;
             }
     
+            var duration = utils.getTime() - this.holdStartTime;
             for ( ; i < l; i++ ) {
-                if (type === 'scroll' && this._pointerHold) {
+                if (type === 'scroll' && this._pointerHold && this.holdStartTime && duration >= 200) {
                     var status = 0,
                         showStatus = true;
                     // 上拉到底部脱离容器 [10, ) 距离时，提示 继续上拉加载更多
                     if (this.loadMoreDom && this.y <= this.maxScrollY - 10 && this.y > this.maxScrollY - this.loadMoreDomHeight) {
                         this.loadMoreDom.children[1].html() !== "继续上拉加载更多" && this.loadMoreDom.children[1].html("继续上拉加载更多");
                         status = 2;
+                        this._waitLoading = false;
                     }
-                    // 上拉到底部脱离容器超过  距离时，提示 松开手指加载更多
+                    // 上拉到底部脱离容器超过  距离时，提示 松开手指立即加载
                     else if (this.loadMoreDom && this.y <= this.maxScrollY - this.loadMoreDomHeight) {
-                        this.loadMoreDom.children[1].html() !== "松开手指加载更多" && this.loadMoreDom.children[1].html("松开手指加载更多");
+                        this.loadMoreDom.children[1].html() !== "松开手指立即加载" && this.loadMoreDom.children[1].html("松开手指立即加载");
                         status = 2;
+                        this._waitLoading = true;
                     }
                     // 下拉到顶部脱离容器 [10, ] 距离时，提示 继续下拉刷新 
                     else if (this.refreshDom && this.y >= 10 && this.y < this.refreshDomHeight) {
                         this.refreshDom.children[1].html() !== "继续下拉刷新" && this.refreshDom.children[1].html("继续下拉刷新");
                         status = 1;
+                        this._waitLoading = false;
                     }
-                    // 下拉到顶部脱离容器超过  距离时，提示 松开手指刷新
+                    // 下拉到顶部脱离容器超过  距离时，提示 松开手指立即刷新
                     else if (this.refreshDom && this.y >= this.refreshDomHeight) {
-                        this.refreshDom.children[1].html() !== "松开手指刷新" && this.refreshDom.children[1].html("松开手指刷新");
+                        this.refreshDom.children[1].html() !== "松开手指立即刷新" && this.refreshDom.children[1].html("松开手指立即刷新");
                         status = 1;
+                        this._waitLoading = true;
                     }
                     else
                         showStatus = false;
@@ -1045,7 +1078,7 @@ _prototype.height = function () {
                 top = -Number(top) + this.y;
                 if (top >= 0)
                     top = 0;
-                this.refreshDom.css("top", top + "px").show().children[1].css("lineHeight", this.refreshDomHeight + "px");
+                this.refreshDom.css("top", top + "px").show().children[1].addClass("line-height-full");
             }
             // 上拉加载更多
             else if (type == 2)
@@ -1054,9 +1087,8 @@ _prototype.height = function () {
                 bottom = -Number(bottom) + this.maxScrollY - this.y;
                 if (bottom >= 8)
                     bottom = 8;
-                this.loadMoreDom.css("bottom", bottom + "px").show().children[1].css("lineHeight", this.loadMoreDomHeight + "px");
+                this.loadMoreDom.css("bottom", bottom + "px").show().children[1].addClass("line-height-full");
             }
-            this._waitLoading = true;
         },
     
         scrollBy: function (x, y, time, easing) {
@@ -2086,6 +2118,7 @@ _prototype.height = function () {
             this.lastPointY	= point.pageY;
     
             this._pointerHold = true;
+            this.holdStartTime = utils.getTime();
             this.startTime	= utils.getTime();
     
             if ( !this.options.disableTouch ) {
@@ -2145,7 +2178,9 @@ _prototype.height = function () {
             }
     
             this.initiated = false;
-            this._pointerHold = true;
+            this._pointerHold = false;
+            this._waitLoading = false;
+            this.holdStartTime = 0;
 
             e.preventDefault();
             e.stopPropagation();
