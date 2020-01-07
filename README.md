@@ -1,6 +1,7 @@
 # IScroll-pro
 
 > `iscroll-pro` 是基于 `iscroll-probe.js` 封装的包含 `下拉刷新` 和 `上拉加载更多` 功能的插件
+
 >更多配置，请参考 `IScroll 5` 相关中文文档：http://caibaojian.com/iscroll-5/
 
 - ### Usage
